@@ -1,0 +1,112 @@
+#!/opt/perl/bin/perl
+
+use 5.026;
+
+use strict;
+use warnings;
+no  warnings 'syntax';
+
+use experimental 'signatures';
+use experimental 'lexical_subs';
+
+use Getopt::Long;
+
+GetOptions  'runs=i'              =>  \(my $runs            = 100_000),
+            'faces=i'             =>  \(my $faces           = 6),
+            'dice|nr-of-dice=i'   =>  \(my $base_nr_of_dice),
+            'sets=i'              =>  \(my $sets            = 3),
+            or die;
+
+$base_nr_of_dice ||= $faces;
+
+my $max_dice = $base_nr_of_dice * $sets;
+my $format   = sprintf "Dice: %%%dd; wins: %%.4f\n", length $max_dice;
+
+foreach my $set (1 .. $sets) {
+    my $nr_of_dice = $base_nr_of_dice * $set;
+    my $nr_of_max  = $set;
+    my $wins = 0;
+    foreach (1 .. $runs) {
+        my @roll     = map {1 + int rand $faces} 1 .. $nr_of_dice;
+        my @max_pips = grep {$_ == $faces} @roll;
+        $wins ++ if @max_pips >= $nr_of_max;
+    }
+    printf $format => $nr_of_dice, $wins / $runs;
+}
+    
+
+__END__
+
+=head1 NAME
+
+newton-pepys - Solve the Newton Pepys problem by simulation
+
+=head1 SYNPOSIS
+
+newton-pepys [--runs RUNS] [--faces FACES] [--dice DICE] [--sets SETS]
+
+=head1 DESCRIPTIONS
+
+The B<< Newton-Pepys problem >> is about the probability of throwing
+sixes with different numbers of dice. The question stated in 1693 by
+Samuel Pepys to Isaac Newton was:
+
+I<< Which if the following event has the greatest chance of success? >>
+
+=over 2
+
+=item *
+
+I<< Six dice are rolled, and at least one of them rolls a 6. >>
+
+=item *
+
+I<< Twelve dice are rolled, and at least two of them roll a 6. >>
+
+=item *
+
+I<< Eighteen dice are rolled, and at least three of them roll a 6. >>
+
+=back
+
+We can assume all the dice are fair, and rolled independently. 
+The chances for the events are, in 4 decimal places, 0.6651, 0.6187,
+and 0.5973.
+
+This program however, simulates the different types of rolls, and
+counts how many times it was a success, and prints a report.
+
+=head2 Options
+
+=over 2
+
+=item * C<< --runs RUNS >>
+
+By default, each event is simulated 100,000 times. This number can be
+overruled by the C<< --runs >> parameter.
+
+=item * C<< --faces FACES >>
+
+By default, we simulate rolling C<< n * 6 >> dice,
+trying to roll at least C<< n >> sixes. But we may to change the
+number of faces a die has with the C<< --faces >> parameter.
+In that case, we will run sets of C<< n * FACES >> dice, trying
+to roll at least C<< n >> dice with the maximum number of pips.
+See also the C<< --dice >> parameter.
+
+=item * C<< --dice DICE >>
+
+By default, we simulate rolling sets of C<< n * f >> dice, where
+C<< f >> is the number of faces a die has. If we want to roll sets
+where the number of dice is different than C<< n * f >> dice, use
+the C<< --dice >> parameter; if given, each set will have 
+C<< n * DICE >> dice.
+
+=item * C<< --sets SETS >>
+
+By default, we simulate three sets, of C<< 6 >>, C<< 12 >> and C<< 18 >>
+dice (assuming neither the C<< --faces >>, nor the C<< --dice >> parameter
+has been set. We can run a different number of sets by using the
+C<< --sets >> parameter.
+
+=back
